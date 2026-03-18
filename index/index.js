@@ -1,7 +1,7 @@
 // ================= Bmob 免费后端配置区 =================
 // ⚠️ 请将下面引号里的汉字，替换成你自己在 Bmob 后台复制的真实密钥
-const BMOB_APP_ID = 'd4ff3fbc89af5fb61f2c301d0e4a75f8';
-const BMOB_REST_KEY = 'a8ebbc3166ba40c04c79384faebedb3f';
+const BMOB_APP_ID = '替换成你的Application ID';
+const BMOB_REST_KEY = '替换成你的REST API Key';
 // =======================================================
 
 const BASE_URL = 'https://api.bmobcloud.com/1/classes';
