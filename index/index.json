@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "设备租赁档期",
+  "navigationBarBackgroundColor": "#2563eb",
+  "navigationBarTextStyle": "white",
+  "renderer": "webview"
+}

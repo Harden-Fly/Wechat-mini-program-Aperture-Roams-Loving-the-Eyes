@@ -1,0 +1,183 @@
+<!-- 登录页面 -->
+<view class="login-page" wx:if="{{!currentUser}}">
+  <view class="login-card">
+    <view class="login-title">欢迎加入档期管理</view>
+    <view class="login-desc">请完善你的个人信息以便团队识别</view>
+    
+    <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <image class="avatar-img" src="{{tempAvatar || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'}}"></image>
+      <view class="avatar-hint">点击获取微信头像</view>
+    </button>
+    
+    <view class="input-group">
+      <text>昵称</text>
+      <input type="nickname" class="nickname-input" placeholder="点击获取微信昵称" bindblur="onNicknameInput" value="{{tempNickname}}" />
+    </view>
+
+    <button class="login-btn" bindtap="handleRealLogin">进入系统</button>
+  </view>
+</view>
+
+<!-- 主页面 -->
+<view class="main-page" wx:if="{{currentUser}}">
+  <view class="custom-nav" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-content" style="height: {{navBarHeight - statusBarHeight}}px;">
+      <text class="nav-title">设备租赁档期</text>
+    </view>
+  </view>
+  
+  <view style="height: {{navBarHeight}}px;"></view>
+
+  <view class="top-section">
+    <view class="device-bar" bindtap="openDeviceSheet">
+      <view class="device-info">
+        <!-- 🌟 动态设备图标 -->
+        <view class="device-icon">{{currentDeviceIcon}}</view>
+        <view class="device-text">
+          <text class="label">当前管理设备</text>
+          <view class="name-with-avatar">
+            <text class="name">{{currentDeviceName}}</text>
+            <image wx:if="{{currentDeviceEditorAvatar}}" class="editor-mini-avatar" src="{{currentDeviceEditorAvatar}}"></image>
+          </view>
+        </view>
+      </view>
+      <view class="switch-btn">切换设备 ▾</view>
+    </view>
+
+    <view class="team-bar">
+      <view class="managers-info" bindtap="openManagersSheet">
+        <text class="team-label">共同管理团队：</text>
+        <view class="manager-avatars">
+          <image wx:for="{{managers}}" wx:key="_id" src="{{item.avatar}}" class="mini-avatar"></image>
+        </view>
+        <text class="team-count">{{managers.length}}人 ></text>
+      </view>
+      <button class="invite-btn" open-type="share">邀请好友</button>
+    </view>
+  </view>
+
+  <view class="calendar-controls">
+    <view class="month-btn" bindtap="prevMonth">‹</view>
+    <view class="month-title">{{year}} 年 {{month + 1}} 月</view>
+    <view class="month-btn" bindtap="nextMonth">›</view>
+  </view>
+
+  <view class="legend">
+    <view class="legend-item"><view class="dot green"></view><text>空闲可租</text></view>
+    <view class="legend-item"><view class="dot red"></view><text>已被租用</text></view>
+  </view>
+
+  <view class="calendar-wrapper">
+    <view class="weekdays">
+      <view class="weekday" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="days-grid">
+      <view class="day empty" wx:for="{{emptyDays}}" wx:key="index"></view>
+      <view class="day {{item.isRented ? 'rented' : 'available'}} {{item.isTempStart ? 'temp-start' : ''}}" 
+            wx:for="{{days}}" wx:key="day" bindtap="toggleStatus" data-day="{{item.day}}">
+        <text class="day-num">{{item.day}}</text>
+        
+        <view class="day-status" wx:if="{{!item.isRented && !item.isTempStart}}">
+          <text class="status-icon">✓</text> 空闲
+        </view>
+
+        <view class="day-status temp-start-text" wx:if="{{item.isTempStart}}">
+          <text class="status-icon">●</text> 起租
+        </view>
+
+        <view class="day-user" wx:if="{{item.isRented}}">
+          <text class="role-badge" wx:if="{{item.roleText}}">{{item.roleText}}</text>
+          <image class="user-avatar {{item.roleText ? 'has-role' : ''}}" src="{{item.user.avatar}}"></image>
+          <text class="user-name">{{item.user.name}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 🌟 新增：支持多条记录、图标和序号的记录展示区 -->
+  <view class="rental-summary-container" wx:if="{{rentalSummaryList.length > 0}}">
+    <view class="summary-item" wx:for="{{rentalSummaryList}}" wx:key="index">
+      <text class="summary-icon">📝</text>
+      <text class="summary-text">{{index + 1}}. {{item}}</text>
+    </view>
+  </view>
+  
+  <view class="footer-note">仅限创建者修改，数据云端实时同步</view>
+</view>
+
+<!-- 团队弹窗 -->
+<view class="overlay" wx:if="{{isManagersSheetOpen}}" bindtap="closeManagersSheet">
+  <view class="bottom-sheet" catchtap="preventBubble">
+    <view class="sheet-header">
+      <text class="sheet-title">团队成员 ({{managers.length}}人)</text>
+      <view class="close-btn" bindtap="closeManagersSheet">✕</view>
+    </view>
+    <scroll-view scroll-y class="device-list">
+      <view class="manager-item" wx:for="{{managers}}" wx:key="_id">
+        <image class="mgr-avatar" src="{{item.avatar}}"></image>
+        <text class="mgr-name">{{item.name}} <text wx:if="{{item._id === currentUser._id}}" class="mgr-me">(我)</text></text>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<!-- 底部设备切换面板 -->
+<view class="overlay" wx:if="{{isDeviceSheetOpen}}" bindtap="closeDeviceSheet">
+  <view class="bottom-sheet" catchtap="preventBubble">
+    <view class="sheet-header">
+      <text class="sheet-title">选择设备</text>
+      <view class="close-btn" bindtap="closeDeviceSheet">✕</view>
+    </view>
+    <scroll-view scroll-y class="device-list">
+      <view class="device-item {{currentDeviceId === item._id ? 'active' : ''}}" 
+            wx:for="{{devices}}" wx:key="_id" bindtap="switchDevice" data-id="{{item._id}}">
+        <view class="item-left">
+          <!-- 🌟 列表展示专属图标 -->
+          <text class="list-icon">{{item.icon || '📸'}}</text>
+          <text class="{{currentDeviceId === item._id ? 'active-text' : ''}}">{{item.name}}</text>
+          <image wx:if="{{item.lastEditorAvatar}}" src="{{item.lastEditorAvatar}}" class="editor-mini-avatar-list"></image>
+        </view>
+        <view class="device-actions">
+          <view class="edit-btn" catchtap="openEditModal" data-device="{{item}}">✏️</view>
+          <view class="delete-btn" wx:if="{{devices.length > 1}}" catchtap="confirmDelete" data-device="{{item}}">🗑️</view>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="add-device-btn" bindtap="openAddModal">＋ 添加新设备</view>
+  </view>
+</view>
+
+<!-- 🌟 修改了添加/编辑弹窗，增加设备图标选择 -->
+<view class="overlay center-overlay" wx:if="{{isAddModalOpen}}">
+  <view class="modal">
+    <view class="modal-title">添加新设备</view>
+    <input class="modal-input" placeholder="例如：索尼 A7M4" value="{{newDeviceName}}" bindinput="onAddDeviceNameInput" />
+    
+    <view class="icon-selector-title">选择设备图标</view>
+    <view class="icon-grid">
+      <view class="icon-item {{selectedIcon === item ? 'active' : ''}}" wx:for="{{availableIcons}}" wx:key="*this" bindtap="selectIcon" data-icon="{{item}}">{{item}}</view>
+    </view>
+
+    <view class="modal-actions">
+      <button class="modal-btn cancel" bindtap="closeAddModal">取消</button>
+      <button class="modal-btn confirm" bindtap="handleAddDevice">确认添加</button>
+    </view>
+  </view>
+</view>
+
+<view class="overlay center-overlay" wx:if="{{isEditModalOpen}}">
+  <view class="modal">
+    <view class="modal-title">修改设备</view>
+    <input class="modal-input" placeholder="请输入新的设备名称" value="{{editingDeviceName}}" bindinput="onEditDeviceNameInput" />
+    
+    <view class="icon-selector-title">更换设备图标</view>
+    <view class="icon-grid">
+      <view class="icon-item {{selectedIcon === item ? 'active' : ''}}" wx:for="{{availableIcons}}" wx:key="*this" bindtap="selectIcon" data-icon="{{item}}">{{item}}</view>
+    </view>
+
+    <view class="modal-actions">
+      <button class="modal-btn cancel" bindtap="closeEditModal">取消</button>
+      <button class="modal-btn confirm" bindtap="handleEditDevice">保存修改</button>
+    </view>
+  </view>
+</view>
